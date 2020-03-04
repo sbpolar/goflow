@@ -467,6 +467,13 @@ type IPFIXOptionsTemplateRecord struct {
 	Scopes          []Field
 }
 
+type IPFIXTemplateField struct {
+	Field
+
+	// A optional EnterpriseID
+	EnterpriseID uint32
+}
+
 func IPFIXTypeToString(typeId uint16) string {
 
 	nameList := map[uint16]string{

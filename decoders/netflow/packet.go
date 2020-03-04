@@ -2,6 +2,7 @@ package netflow
 
 import (
 	"fmt"
+	"strconv"
 )
 
 // FlowSetHeader contains fields shared by all Flow Sets (DataFlowSet,
@@ -56,7 +57,7 @@ type TemplateRecord struct {
 	FieldCount uint16
 
 	// List of fields in this Template Record.
-	Fields []Field
+	Fields []interface{}
 }
 
 type DataRecord struct {
@@ -91,6 +92,8 @@ type DataField struct {
 	// The value (in bytes) of the field.
 	Value interface{}
 	//Value []byte
+
+	Length uint16
 }
 
 func (flowSet OptionsDataFlowSet) String(TypeToString func(uint16) string, ScopeToString func(uint16) string) string {
@@ -144,8 +147,21 @@ func (flowSet TemplateFlowSet) String(TypeToString func(uint16) string) string {
 		str += fmt.Sprintf("            FieldCount: %v\n", record.FieldCount)
 		str += fmt.Sprintf("            Fields (%v):\n", len(record.Fields))
 
-		for k, field := range record.Fields {
-			str += fmt.Sprintf("            - %v. %v (%v): %v\n", k, TypeToString(field.Type), field.Type, field.Length)
+		for k, tf := range record.Fields {
+			switch field := tf.(type) {
+			case Field:
+				str += fmt.Sprintf("            - %v. %v (%v): %v\n", k, TypeToString(field.Type), field.Type, field.Length)
+			case IPFIXTemplateField:
+				entid := ""
+				if field.EnterpriseID > 0 {
+					entid = fmt.Sprintf(" (enterprise: %d)", field.EnterpriseID)
+				}
+				lengthStr := strconv.Itoa(int(field.Length))
+				if field.Length == 0xFFFF {
+					lengthStr = "VARIABLE"
+				}
+				str += fmt.Sprintf("            - %v. %v (%v): %s%s\n", k, TypeToString(field.Type), field.Type, lengthStr, entid)
+			}
 		}
 	}
 
